@@ -56,8 +56,8 @@ function SpeechToSign() {
     <div className="speech-to-sign">
       <div className="translation-card">
         <div className="card-header">
-          <h2>Speech Input</h2>
-          <p className="card-description">Speak into your microphone to translate to sign language</p>
+          <h2>Record Speech</h2>
+          <p className="card-description">Click to start recording and translate your speech to sign language</p>
         </div>
 
         <div className="audio-controls">
@@ -94,19 +94,19 @@ function SpeechToSign() {
 
       <div className="translation-card">
         <div className="card-header">
-          <h2>Transcribed Text</h2>
+          <h2>Transcription</h2>
         </div>
         <div className="output-display text-output">
           {transcribedText || (
-            <span className="placeholder">Transcribed text will appear here...</span>
+            <span className="placeholder">Transcribed text will appear here</span>
           )}
         </div>
       </div>
 
       <div className="translation-card">
         <div className="card-header">
-          <h2>Sign Language Output</h2>
-          <p className="card-description">Visual representation of sign language</p>
+          <h2>Sign Language</h2>
+          <p className="card-description">Visual representation of the translated sign language</p>
         </div>
         <div className="output-display sign-output">
           {signLanguageOutput ? (
@@ -121,9 +121,9 @@ function SpeechToSign() {
                 {signLanguageOutput}
               </div>
             </div>
-          ) : (
-            <span className="placeholder">Sign language translation will appear here...</span>
-          )}
+            ) : (
+              <span className="placeholder">Sign language translation will appear here</span>
+            )}
         </div>
       </div>
     </div>

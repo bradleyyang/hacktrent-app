@@ -335,10 +335,10 @@ function SignToSpeech({
         <div className="sign-to-speech">
             <div className="translation-card camera-card">
                 <div className="card-header">
-                    <h2>Camera Input</h2>
+                    <h2>Camera Feed</h2>
                     <p className="card-description">
-                        Show sign language to the camera for real-time
-                        translation
+                        Start streaming to translate sign language to speech in
+                        real-time
                     </p>
                 </div>
 
@@ -415,12 +415,12 @@ function SignToSpeech({
 
             <div className="translation-card">
                 <div className="card-header">
-                    <h2>Detected Sign Language</h2>
+                    <h2>Detected Signs</h2>
                 </div>
                 <div className="output-display sign-input">
                     {detectedSign || (
                         <span className="placeholder">
-                            Detected sign language will appear here...
+                            Detected sign language will appear here
                         </span>
                     )}
                 </div>
@@ -428,12 +428,12 @@ function SignToSpeech({
 
             <div className="translation-card">
                 <div className="card-header">
-                    <h2>Translated Text (Real-time)</h2>
+                    <h2>Translation</h2>
                 </div>
                 <div className="output-display text-output">
                     {translatedText || (
                         <span className="placeholder">
-                            Translated text will appear here...
+                            Translated text will appear here
                         </span>
                     )}
                 </div>
@@ -444,8 +444,8 @@ function SignToSpeech({
                     <div className="card-header">
                         <h2>Audio Output</h2>
                         <p className="card-description">
-                            Audio will play automatically when received from
-                            backend
+                            Audio playback will start automatically when
+                            available
                         </p>
                     </div>
                     <div className="audio-output-controls">

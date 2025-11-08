@@ -5,22 +5,55 @@
 }
 
 :root {
-  --primary-color: #6366f1;
-  --primary-dark: #4f46e5;
-  --primary-light: #818cf8;
-  --secondary-color: #8b5cf6;
-  --background: #0f172a;
-  --surface: #1e293b;
-  --surface-light: #334155;
-  --text-primary: #f1f5f9;
-  --text-secondary: #cbd5e1;
-  --text-muted: #94a3b8;
-  --success: #10b981;
+  /* Vercel-inspired color palette */
+  --background: #ffffff;
+  --background-secondary: #fafafa;
+  --surface: #ffffff;
+  --surface-hover: #fafafa;
+  --border: #eaeaea;
+  --border-hover: #d1d1d1;
+  
+  --text-primary: #000000;
+  --text-secondary: #666666;
+  --text-muted: #999999;
+  --text-inverse: #ffffff;
+  
+  --primary: #000000;
+  --primary-hover: #333333;
+  --accent: #0070f3;
+  --accent-hover: #0051cc;
+  
+  --success: #22c55e;
   --warning: #f59e0b;
   --error: #ef4444;
-  --border: #334155;
-  --shadow: rgba(0, 0, 0, 0.3);
-  --gradient: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  
+  --radius: 8px;
+  --radius-lg: 12px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #000000;
+    --background-secondary: #111111;
+    --surface: #111111;
+    --surface-hover: #1a1a1a;
+    --border: #333333;
+    --border-hover: #404040;
+    
+    --text-primary: #ffffff;
+    --text-secondary: #a1a1a1;
+    --text-muted: #666666;
+    --text-inverse: #000000;
+    
+    --primary: #ffffff;
+    --primary-hover: #e5e5e5;
+    --accent: #3291ff;
+    --accent-hover: #0070f3;
+  }
 }
 
 body {
@@ -32,12 +65,12 @@ body {
   background: var(--background);
   color: var(--text-primary);
   min-height: 100vh;
-  line-height: 1.6;
+  line-height: 1.5;
+  font-size: 14px;
 }
 
 code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
+  font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
 }
 
 #root {

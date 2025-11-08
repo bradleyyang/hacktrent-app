@@ -2,119 +2,129 @@
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  padding: 2rem;
-  max-width: 1400px;
-  margin: 0 auto;
+  background: var(--background);
 }
 
 .app-header {
-  text-align: center;
-  margin-bottom: 3rem;
-  padding: 2rem 0;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+  padding: 0;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  backdrop-filter: blur(8px);
+  background: rgba(255, 255, 255, 0.8);
+}
+
+@media (prefers-color-scheme: dark) {
+  .app-header {
+    background: rgba(0, 0, 0, 0.8);
+  }
+}
+
+.header-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1.5rem 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
 .app-title {
-  font-size: 3rem;
-  font-weight: 700;
-  background: var(--gradient);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  margin-bottom: 0.5rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 1rem;
-}
-
-.title-icon {
-  font-size: 3.5rem;
-  filter: none;
-  -webkit-text-fill-color: initial;
-}
-
-.app-subtitle {
-  font-size: 1.25rem;
-  color: var(--text-secondary);
-  font-weight: 300;
-}
-
-.mode-selector {
-  display: flex;
-  gap: 1rem;
-  justify-content: center;
-  margin-bottom: 3rem;
-  flex-wrap: wrap;
-}
-
-.mode-button {
-  padding: 1rem 2rem;
-  font-size: 1.1rem;
+  font-size: 1.5rem;
   font-weight: 600;
-  border: 2px solid var(--border);
-  background: var(--surface);
   color: var(--text-primary);
-  border-radius: 12px;
-  cursor: pointer;
-  transition: all 0.3s ease;
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  min-width: 220px;
-  justify-content: center;
+  letter-spacing: -0.02em;
+}
+
+.title-icon {
+  font-size: 1.75rem;
+}
+
+.nav-tabs {
+  display: flex;
+  gap: 0.5rem;
+  background: var(--background-secondary);
+  padding: 0.25rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+}
+
+.mode-button {
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  border-radius: calc(var(--radius) - 2px);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  white-space: nowrap;
 }
 
 .mode-button:hover {
-  border-color: var(--primary-color);
-  background: var(--surface-light);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px var(--shadow);
+  color: var(--text-primary);
+  background: var(--surface);
 }
 
 .mode-button.active {
-  background: var(--gradient);
-  border-color: transparent;
-  color: white;
-  box-shadow: 0 4px 20px rgba(99, 102, 241, 0.4);
+  background: var(--primary);
+  color: var(--text-inverse);
+  box-shadow: var(--shadow-sm);
 }
 
 .button-icon {
-  font-size: 1.5rem;
+  font-size: 1rem;
 }
 
 .app-main {
   flex: 1;
   width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
 }
 
 .app-footer {
+  border-top: 1px solid var(--border);
+  padding: 2rem;
   text-align: center;
-  padding: 2rem 0;
   color: var(--text-muted);
-  font-size: 0.9rem;
-  margin-top: 3rem;
+  font-size: 0.8125rem;
+  background: var(--background-secondary);
 }
 
 @media (max-width: 768px) {
-  .app {
+  .header-content {
+    flex-direction: column;
+    gap: 1rem;
     padding: 1rem;
   }
 
   .app-title {
-    font-size: 2rem;
+    font-size: 1.25rem;
   }
 
-  .title-icon {
-    font-size: 2.5rem;
-  }
-
-  .app-subtitle {
-    font-size: 1rem;
+  .nav-tabs {
+    width: 100%;
+    justify-content: stretch;
   }
 
   .mode-button {
-    width: 100%;
-    min-width: unset;
+    flex: 1;
+    justify-content: center;
+  }
+
+  .app-main {
+    padding: 1rem;
   }
 }
 

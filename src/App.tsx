@@ -11,29 +11,29 @@ function App() {
   return (
     <div className="app">
       <header className="app-header">
-        <h1 className="app-title">
-          <span className="title-icon">🤟</span>
-          Sign Language Translator
-        </h1>
-        <p className="app-subtitle">Bridge the gap between speech and sign language</p>
+        <div className="header-content">
+          <h1 className="app-title">
+            <span className="title-icon">🤟</span>
+            Sign Language Translator
+          </h1>
+          <nav className="nav-tabs">
+            <button
+              className={`mode-button ${mode === 'speech-to-sign' ? 'active' : ''}`}
+              onClick={() => setMode('speech-to-sign')}
+            >
+              <span className="button-icon">🎤</span>
+              Speech to Sign
+            </button>
+            <button
+              className={`mode-button ${mode === 'sign-to-speech' ? 'active' : ''}`}
+              onClick={() => setMode('sign-to-speech')}
+            >
+              <span className="button-icon">📹</span>
+              Sign to Speech
+            </button>
+          </nav>
+        </div>
       </header>
-
-      <div className="mode-selector">
-        <button
-          className={`mode-button ${mode === 'speech-to-sign' ? 'active' : ''}`}
-          onClick={() => setMode('speech-to-sign')}
-        >
-          <span className="button-icon">🎤</span>
-          Speech → Sign Language
-        </button>
-        <button
-          className={`mode-button ${mode === 'sign-to-speech' ? 'active' : ''}`}
-          onClick={() => setMode('sign-to-speech')}
-        >
-          <span className="button-icon">📹</span>
-          Sign Language → Speech
-        </button>
-      </div>
 
       <main className="app-main">
         {mode === 'speech-to-sign' ? <SpeechToSign /> : <SignToSpeech />}
