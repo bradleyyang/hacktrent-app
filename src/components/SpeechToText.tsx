@@ -1,29 +1,20 @@
 import { useState, useRef, useEffect } from "react";
 import {
-    textToSignLanguage,
-    textToSignLanguageAPI,
-} from "../utils/signLanguageMapper";
-import {
     floatTo16BitPCM,
     createAudioContext,
     getAudioConstraints,
 } from "../utils/audioProcessing";
-import "./SpeechToSign.css";
+import "./SpeechToText.css";
 
-interface SpeechToSignProps {
+interface SpeechToTextProps {
     wsUrl?: string;
-    useBackendAPI?: boolean;
-    apiUrl?: string;
 }
 
-function SpeechToSign({
+function SpeechToText({
     wsUrl = "ws://localhost:8000/ws",
-    useBackendAPI = false,
-    apiUrl = "/api/text-to-sign",
-}: SpeechToSignProps = {}) {
+}: SpeechToTextProps = {}) {
     const [isRecording, setIsRecording] = useState(false);
     const [transcribedText, setTranscribedText] = useState("");
-    const [signLanguageOutput, setSignLanguageOutput] = useState("");
     const [status, setStatus] = useState("idle");
     const [connectionStatus, setConnectionStatus] = useState<
         "disconnected" | "connecting" | "connected"
@@ -33,28 +24,6 @@ function SpeechToSign({
     const audioContextRef = useRef<AudioContext | null>(null);
     const processorRef = useRef<ScriptProcessorNode | null>(null);
     const streamRef = useRef<MediaStream | null>(null);
-
-    // Convert text to sign language
-    const handleTextToSign = async (text: string) => {
-        if (!text || text.trim().length === 0) {
-            setSignLanguageOutput("");
-            return;
-        }
-
-        try {
-            if (useBackendAPI) {
-                const signLang = await textToSignLanguageAPI(text, apiUrl);
-                setSignLanguageOutput(signLang);
-            } else {
-                const signLang = textToSignLanguage(text);
-                setSignLanguageOutput(signLang);
-            }
-        } catch (error) {
-            console.error("Error converting to sign language:", error);
-            const signLang = textToSignLanguage(text);
-            setSignLanguageOutput(signLang);
-        }
-    };
 
     // Connect WebSocket
     const connectWebSocket = () => {
@@ -83,16 +52,11 @@ function SpeechToSign({
                         if (data.text) {
                             // Append new text to existing transcript
                             setTranscribedText((prev) => {
-                                const newText = prev
-                                    ? `${prev} ${data.text}`
-                                    : data.text;
-                                handleTextToSign(newText);
-                                return newText;
+                                return prev ? `${prev} ${data.text}` : data.text;
                             });
                         } else if (data.transcript) {
                             // Handle full transcript updates
                             setTranscribedText(data.transcript);
-                            handleTextToSign(data.transcript);
                         } else if (data.type === "info") {
                             setStatus(data.message || "info");
                         }
@@ -222,7 +186,6 @@ function SpeechToSign({
 
     const handleClear = () => {
         setTranscribedText("");
-        setSignLanguageOutput("");
     };
 
     // Cleanup on unmount
@@ -233,13 +196,12 @@ function SpeechToSign({
     }, []);
 
     return (
-        <div className="speech-to-sign">
+        <div className="speech-to-text">
             <div className="translation-card">
                 <div className="card-header">
                     <h2>Record Speech</h2>
                     <p className="card-description">
-                        Click to start recording and translate your speech to
-                        sign language in real-time
+                        Click to start recording and get real-time transcription
                     </p>
                 </div>
 
@@ -266,7 +228,7 @@ function SpeechToSign({
                     <button
                         className="clear-button"
                         onClick={handleClear}
-                        disabled={!transcribedText && !signLanguageOutput}
+                        disabled={!transcribedText}
                     >
                         Clear
                     </button>
@@ -312,35 +274,9 @@ function SpeechToSign({
                     )}
                 </div>
             </div>
-
-            <div className="translation-card">
-                <div className="card-header">
-                    <h2>Sign Language</h2>
-                    <p className="card-description">
-                        Visual representation of the translated sign language
-                    </p>
-                </div>
-                <div className="output-display sign-output">
-                    {signLanguageOutput ? (
-                        <div className="sign-visualization">
-                            <div className="sign-animation-area">
-                                <div className="sign-placeholder">
-                                    {signLanguageOutput}
-                                </div>
-                            </div>
-                            <div className="sign-text">
-                                {signLanguageOutput}
-                            </div>
-                        </div>
-                    ) : (
-                        <span className="placeholder">
-                            Sign language translation will appear here
-                        </span>
-                    )}
-                </div>
-            </div>
         </div>
     );
 }
 
-export default SpeechToSign;
+export default SpeechToText;
+

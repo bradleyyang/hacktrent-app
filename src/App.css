@@ -52,6 +52,20 @@
   padding: 0.25rem;
   border-radius: var(--radius);
   border: 1px solid var(--border);
+  position: relative;
+}
+
+.nav-slider {
+  position: absolute;
+  top: 0.25rem;
+  left: 0.25rem;
+  height: calc(100% - 0.5rem);
+  background: var(--primary);
+  border-radius: calc(var(--radius) - 2px);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: var(--shadow-sm);
+  z-index: 0;
 }
 
 .mode-button {
@@ -63,22 +77,21 @@
   color: var(--text-secondary);
   border-radius: calc(var(--radius) - 2px);
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: color 0.2s ease;
   display: flex;
   align-items: center;
   gap: 0.5rem;
   white-space: nowrap;
+  position: relative;
+  z-index: 1;
 }
 
 .mode-button:hover {
   color: var(--text-primary);
-  background: var(--surface);
 }
 
 .mode-button.active {
-  background: var(--primary);
   color: var(--text-inverse);
-  box-shadow: var(--shadow-sm);
 }
 
 .button-icon {
