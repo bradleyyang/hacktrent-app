@@ -137,6 +137,33 @@
   cursor: not-allowed;
 }
 
+.status-display {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  background: var(--background-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 0.8125rem;
+  margin-top: 0.75rem;
+}
+
+.status-label {
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.status-value {
+  color: var(--text-muted);
+  text-transform: capitalize;
+}
+
+.status-value.connected {
+  color: var(--success);
+  font-weight: 500;
+}
+
 .recording-indicator {
   display: flex;
   align-items: center;
