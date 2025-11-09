@@ -1,5 +1,7 @@
 # Sign Language Translator Web App
 
+backend server that this frontend sends requests to: https://github.com/DanielHe09/ASL_to_text
+
 A modern web application that translates between spoken words and sign language in both directions.
 
 ## Features
