@@ -7,21 +7,19 @@ function SignToSpeech({}: SignToSpeechProps = {}) {
     const videoRef = useRef<HTMLVideoElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const streamRef = useRef<MediaStream | null>(null);
+    const audioRef = useRef<HTMLAudioElement | null>(null);
 
     const [isStreaming, setIsStreaming] = useState(false);
     const [translatedText, setTranslatedText] = useState("");
 
-    // Timer for sending frames
     const frameIntervalRef = useRef<number | null>(null);
 
-    // Cleanup on unmount
     useEffect(() => {
         return () => {
             stopCamera();
         };
     }, []);
 
-    /** Capture a single frame from the video as a Blob */
     async function captureFrame(): Promise<Blob | null> {
         if (!canvasRef.current || !videoRef.current) return null;
 
@@ -37,43 +35,77 @@ function SignToSpeech({}: SignToSpeechProps = {}) {
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
         return new Promise((resolve) => {
-            canvas.toBlob((blob) => resolve(blob), "image/jpeg");
+            canvas.toBlob((blob) => resolve(blob), "image/jpeg", 0.8);
         });
     }
 
-    /** Send a frame to the /predict endpoint */
     async function sendFrameToBackend() {
         const frameBlob = await captureFrame();
-        if (!frameBlob) return;
+        if (!frameBlob) {
+            console.warn("Failed to capture frame");
+            return;
+        }
 
         const formData = new FormData();
         formData.append("file", frameBlob, "frame.jpg");
 
         try {
-            const response = await fetch("http://localhost:8000/predict", {
-                method: "POST",
-                body: formData,
-            });
+            const response = await fetch(
+                "https://asl-to-text.onrender.com/predict",
+                {
+                    method: "POST",
+                    body: formData,
+                }
+            );
 
             if (!response.ok) {
-                console.error("Prediction request failed", response.statusText);
+                const errorText = await response.text();
+                console.error(
+                    "Prediction request failed:",
+                    response.statusText,
+                    errorText
+                );
                 return;
             }
 
             const data = await response.json();
-            setTranslatedText(data.prediction);
 
-            // Play audio if returned
+            if (data.prediction) {
+                console.debug("prediction exists");
+                setTranslatedText(data.prediction);
+            }
+
             if (data.audio) {
-                const audio = new Audio(`data:audio/wav;base64,${data.audio}`);
-                audio.play();
+                console.debug("audio exists");
+                playAudioFromBase64(data.audio);
             }
         } catch (err) {
             console.error("Error sending frame:", err);
         }
     }
 
-    /** Start the camera */
+    function playAudioFromBase64(base64Audio: string) {
+        try {
+            if (audioRef.current) {
+                audioRef.current.pause();
+                audioRef.current = null;
+            }
+
+            const audio = new Audio(`data:audio/wav;base64,${base64Audio}`);
+            audioRef.current = audio;
+
+            audio.onerror = (e) => {
+                console.error("Audio playback error:", e);
+            };
+
+            audio.play().catch((err) => {
+                console.error("Audio play failed:", err);
+            });
+        } catch (err) {
+            console.error("Error creating audio:", err);
+        }
+    }
+
     async function startCamera() {
         try {
             const stream = await navigator.mediaDevices.getUserMedia({
@@ -94,7 +126,6 @@ function SignToSpeech({}: SignToSpeechProps = {}) {
         }
     }
 
-    /** Stop the camera */
     function stopCamera() {
         const stream = videoRef.current?.srcObject as MediaStream | null;
         if (stream) {
@@ -103,33 +134,35 @@ function SignToSpeech({}: SignToSpeechProps = {}) {
             streamRef.current = null;
         }
 
-        // Stop sending frames
         if (frameIntervalRef.current !== null) {
             clearInterval(frameIntervalRef.current);
             frameIntervalRef.current = null;
         }
+
+        if (audioRef.current) {
+            audioRef.current.pause();
+            audioRef.current = null;
+        }
     }
 
-    /** Handle start streaming */
     async function handleStart() {
         const ok = await startCamera();
         if (!ok) return;
 
         setIsStreaming(true);
 
-        // Send frames every 1 second
+        sendFrameToBackend();
+
         frameIntervalRef.current = window.setInterval(() => {
             sendFrameToBackend();
-        }, 1000);
+        }, 2000);
     }
 
-    /** Handle stop streaming */
     function handleStop() {
         setIsStreaming(false);
         stopCamera();
     }
 
-    /** Toggle streaming */
     const toggleStreaming = () => {
         if (isStreaming) handleStop();
         else handleStart();
