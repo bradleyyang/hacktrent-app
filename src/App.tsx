@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef } from "react";
 import SpeechToText from "./components/SpeechToText";
 import SignToSpeech from "./components/SignToSpeech";
 import "./App.css";

@@ -11,7 +11,6 @@ interface SpeechToTextProps {
 }
 
 function SpeechToText({
-    wsUrl = "ws://localhost:8000/ws",
 }: SpeechToTextProps = {}) {
     const [isRecording, setIsRecording] = useState(false);
     const [transcribedText, setTranscribedText] = useState("");
