@@ -15,86 +15,15 @@ function SpeechToText({
 }: SpeechToTextProps = {}) {
     const [isRecording, setIsRecording] = useState(false);
     const [transcribedText, setTranscribedText] = useState("");
-    const [status, setStatus] = useState("idle");
-    const [connectionStatus, setConnectionStatus] = useState<
-        "disconnected" | "connecting" | "connected"
-    >("disconnected");
 
-    const wsRef = useRef<WebSocket | null>(null);
     const audioContextRef = useRef<AudioContext | null>(null);
     const processorRef = useRef<ScriptProcessorNode | null>(null);
     const streamRef = useRef<MediaStream | null>(null);
+    const audioChunksRef = useRef<Int16Array[]>([]);
 
-    // Connect WebSocket
-    const connectWebSocket = () => {
-        if (wsRef.current?.readyState === WebSocket.OPEN) {
-            return;
-        }
-
-        setConnectionStatus("connecting");
-        setStatus("connecting...");
-
-        try {
-            wsRef.current = new WebSocket(wsUrl);
-            wsRef.current.binaryType = "arraybuffer";
-
-            wsRef.current.onopen = () => {
-                console.log("WebSocket connected");
-                setConnectionStatus("connected");
-                setStatus("connected");
-            };
-
-            wsRef.current.onmessage = (event) => {
-                try {
-                    // Handle JSON messages (transcripts)
-                    if (typeof event.data === "string") {
-                        const data = JSON.parse(event.data);
-                        if (data.text) {
-                            // Append new text to existing transcript
-                            setTranscribedText((prev) => {
-                                return prev ? `${prev} ${data.text}` : data.text;
-                            });
-                        } else if (data.transcript) {
-                            // Handle full transcript updates
-                            setTranscribedText(data.transcript);
-                        } else if (data.type === "info") {
-                            setStatus(data.message || "info");
-                        }
-                    }
-                } catch (e) {
-                    console.warn("Error parsing WebSocket message:", e);
-                }
-            };
-
-            wsRef.current.onerror = (err) => {
-                console.error("WebSocket error:", err);
-                setConnectionStatus("disconnected");
-                setStatus("connection error");
-            };
-
-            wsRef.current.onclose = () => {
-                console.log("WebSocket closed");
-                setConnectionStatus("disconnected");
-                setStatus("disconnected");
-                // Attempt to reconnect if recording is still active
-                if (isRecording) {
-                    setTimeout(() => {
-                        connectWebSocket();
-                    }, 1000);
-                }
-            };
-        } catch (err) {
-            console.error("Failed to connect WebSocket:", err);
-            setConnectionStatus("disconnected");
-            setStatus("connection failed");
-        }
-    };
-
-    // Start real-time audio streaming
+    // Start recording
     const handleStartRecording = async () => {
         try {
-            setStatus("requesting microphone access...");
-
             // Get microphone access
             const stream = await navigator.mediaDevices.getUserMedia(
                 getAudioConstraints()
@@ -107,8 +36,6 @@ function SpeechToText({
                 audioContextRef.current.createMediaStreamSource(stream);
 
             // Create ScriptProcessorNode for audio processing
-            // Note: ScriptProcessorNode is deprecated but widely supported
-            // For production, consider using AudioWorkletNode instead
             const bufferSize = 4096;
             processorRef.current =
                 audioContextRef.current.createScriptProcessor(bufferSize, 1, 1);
@@ -116,38 +43,26 @@ function SpeechToText({
             source.connect(processorRef.current);
             processorRef.current.connect(audioContextRef.current.destination);
 
+            // Clear previous chunks
+            audioChunksRef.current = [];
+
             // Process audio chunks
             processorRef.current.onaudioprocess = (e) => {
-                if (
-                    !isRecording ||
-                    !wsRef.current ||
-                    wsRef.current.readyState !== WebSocket.OPEN
-                ) {
+                if (!isRecording) {
                     return;
                 }
 
                 const inputData = e.inputBuffer.getChannelData(0);
                 const buffer = new Float32Array(inputData);
 
-                // Convert to 16-bit PCM
+                // Convert to 16-bit PCM and store
                 const pcm16 = floatTo16BitPCM(buffer);
-
-                // Send via WebSocket
-                try {
-                    wsRef.current.send(pcm16);
-                } catch (err) {
-                    console.error("Error sending audio data:", err);
-                }
+                // audioChunksRef.current.push(pcm16);
             };
 
-            // Connect WebSocket
-            connectWebSocket();
-
             setIsRecording(true);
-            setStatus("recording...");
         } catch (error) {
             console.error("Error accessing microphone:", error);
-            setStatus("microphone error");
             alert("Unable to access microphone. Please check permissions.");
         }
     };
@@ -155,7 +70,6 @@ function SpeechToText({
     // Stop recording
     const handleStopRecording = () => {
         setIsRecording(false);
-        setStatus("stopped");
 
         // Disconnect audio processing
         if (processorRef.current) {
@@ -175,108 +89,72 @@ function SpeechToText({
             streamRef.current = null;
         }
 
-        // Close WebSocket
-        if (wsRef.current) {
-            wsRef.current.close();
-            wsRef.current = null;
-        }
-
-        setConnectionStatus("disconnected");
+        // TODO: Send audioChunksRef.current to backend
+        console.log("Audio recorded, ready to send to backend:", audioChunksRef.current.length, "chunks");
     };
 
-    const handleClear = () => {
-        setTranscribedText("");
+    const toggleRecording = () => {
+        if (isRecording) {
+            handleStopRecording();
+        } else {
+            handleStartRecording();
+        }
     };
 
     // Cleanup on unmount
     useEffect(() => {
         return () => {
-            handleStopRecording();
+            if (isRecording) {
+                handleStopRecording();
+            }
         };
     }, []);
 
     return (
-        <div className="speech-to-text">
-            <div className="translation-card">
-                <div className="card-header">
-                    <h2>Record Speech</h2>
-                    <p className="card-description">
-                        Click to start recording and get real-time transcription
-                    </p>
-                </div>
-
-                <div className="audio-controls">
-                    <button
-                        className={`record-button ${
-                            isRecording ? "recording" : ""
-                        }`}
-                        onClick={
-                            isRecording
-                                ? handleStopRecording
-                                : handleStartRecording
-                        }
-                    >
-                        <span className="record-icon">
-                            {isRecording ? "⏹️" : "🎤"}
-                        </span>
-                        <span className="record-text">
-                            {isRecording ? "Stop Recording" : "Start Recording"}
-                        </span>
-                        {isRecording && <span className="pulse-dot"></span>}
-                    </button>
-
-                    <button
-                        className="clear-button"
-                        onClick={handleClear}
-                        disabled={!transcribedText}
-                    >
-                        Clear
-                    </button>
-                </div>
-
-                {(isRecording || status !== "idle") && (
-                    <div className="status-display">
-                        <span className="status-label">Status:</span>
-                        <span
-                            className={`status-value ${
-                                connectionStatus === "connected"
-                                    ? "connected"
-                                    : ""
-                            }`}
-                        >
-                            {status}
-                        </span>
+        <div className="speech-to-text-container">
+            <div className="conversation-area">
+                {transcribedText && (
+                    <div className="message">
+                        <div className="message-content">{transcribedText}</div>
+                    </div>
+                )}
+                
+                {!transcribedText && !isRecording && (
+                    <div className="empty-state">
+                        <p className="empty-text">Click the button below to start recording</p>
                     </div>
                 )}
 
                 {isRecording && (
-                    <div className="recording-indicator">
-                        <span className="recording-dot"></span>
-                        Recording in progress...
+                    <div className="recording-status">
+                        <div className="recording-pulse"></div>
+                        <span>Recording...</span>
                     </div>
                 )}
             </div>
 
-            <div className="translation-card">
-                <div className="card-header">
-                    <h2>Transcription</h2>
-                    {isRecording && (
-                        <p className="card-description">
-                            Real-time transcription updates as you speak
-                        </p>
+            <div className="input-area">
+                <button
+                    className={`record-button ${isRecording ? "recording" : ""}`}
+                    onClick={toggleRecording}
+                    aria-label={isRecording ? "Stop recording" : "Start recording"}
+                >
+                    {isRecording ? (
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <rect x="6" y="6" width="12" height="12" rx="2" />
+                        </svg>
+                    ) : (
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
+                            <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                            <line x1="12" y1="19" x2="12" y2="23" />
+                            <line x1="8" y1="23" x2="16" y2="23" />
+                        </svg>
                     )}
-                </div>
-                <div className="output-display text-output">
-                    {transcribedText || (
-                        <span className="placeholder">
-                            Transcribed text will appear here
-                        </span>
-                    )}
-                </div>
+                </button>
             </div>
         </div>
     );
 }
 
 export default SpeechToText;
-

@@ -70,12 +70,7 @@ function App() {
                 </section>
 
                 {mode === "speech-to-text" ? (
-                    <SpeechToText
-                        wsUrl={
-                            import.meta.env.VITE_WS_URL ||
-                            "ws://localhost:8000/ws"
-                        }
-                    />
+                    <SpeechToText />
                 ) : (
                     <SignToSpeech />
                 )}
