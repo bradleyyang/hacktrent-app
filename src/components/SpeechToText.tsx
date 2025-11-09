@@ -10,29 +10,67 @@ interface SpeechToTextProps {
     wsUrl?: string;
 }
 
+function resampleTo16kHz(
+    buffer: Float32Array,
+    originalSampleRate: number
+): Float32Array {
+    const targetSampleRate = 16000;
+    const ratio = originalSampleRate / targetSampleRate;
+    const newLength = Math.round(buffer.length / ratio);
+    const resampled = new Float32Array(newLength);
+    let offsetResult = 0;
+    let offsetBuffer = 0;
+
+    while (offsetResult < newLength) {
+        const nextOffsetBuffer = Math.round((offsetResult + 1) * ratio);
+        // Simple linear interpolation
+        let accum = 0;
+        let count = 0;
+        for (
+            let i = offsetBuffer;
+            i < nextOffsetBuffer && i < buffer.length;
+            i++
+        ) {
+            accum += buffer[i];
+            count++;
+        }
+        resampled[offsetResult] = accum / count;
+        offsetResult++;
+        offsetBuffer = nextOffsetBuffer;
+    }
+
+    return resampled;
+}
+
 function SpeechToText({
     wsUrl = "ws://localhost:8000/ws",
 }: SpeechToTextProps = {}) {
     const [isRecording, setIsRecording] = useState(false);
     const [transcribedText, setTranscribedText] = useState("");
 
+    const isRecordingRef = useRef(false);
     const audioContextRef = useRef<AudioContext | null>(null);
     const processorRef = useRef<ScriptProcessorNode | null>(null);
     const streamRef = useRef<MediaStream | null>(null);
     const audioChunksRef = useRef<Int16Array[]>([]);
-
-    // const batchIntervalRef = useRef<NodeJS.Timer | null>(null); // ADDED
     const batchIntervalRef = useRef<ReturnType<typeof setInterval> | null>(
         null
     );
 
-    // ADDED
+    // Safe Base64 conversion for large arrays
+    function int16ToBase64(int16Array: Int16Array) {
+        const chunkSize = 0x8000; // 32k
+        let result = "";
+        for (let i = 0; i < int16Array.length; i += chunkSize) {
+            const chunk = int16Array.subarray(i, i + chunkSize);
+            result += String.fromCharCode(...chunk);
+        }
+        return btoa(result);
+    }
+
     async function sendAudioBatch(pcmData: Int16Array) {
         try {
-            // Convert Int16Array to Base64
-            const wavBase64 = btoa(
-                String.fromCharCode(...new Uint8Array(pcmData.buffer))
-            );
+            const wavBase64 = int16ToBase64(pcmData);
 
             const res = await fetch("http://localhost:8000/transcribe-audio", {
                 method: "POST",
@@ -56,7 +94,6 @@ function SpeechToText({
         }
     }
 
-    // Start recording
     const handleStartRecording = async () => {
         try {
             const stream = await navigator.mediaDevices.getUserMedia(
@@ -76,22 +113,25 @@ function SpeechToText({
             processorRef.current.connect(audioContextRef.current.destination);
 
             audioChunksRef.current = [];
+            isRecordingRef.current = true;
+            setIsRecording(true);
 
             processorRef.current.onaudioprocess = (e) => {
-                if (!isRecording) return;
+                if (!isRecordingRef.current) return;
 
                 const inputData = e.inputBuffer.getChannelData(0);
-                const buffer = new Float32Array(inputData);
 
-                // const pcm16 = floatTo16BitPCM(buffer);
-                // audioChunksRef.current.push(pcm16); // ✅ UNCOMMENTED
+                // Resample to 16 kHz
+                const resampled = resampleTo16kHz(
+                    inputData,
+                    audioContextRef.current!.sampleRate
+                );
 
-                const pcm16Buffer = floatTo16BitPCM(buffer);
-                const pcm16 = new Int16Array(pcm16Buffer); // ✅ wrap
+                const pcm16Buffer = floatTo16BitPCM(resampled);
+                const pcm16 = new Int16Array(pcm16Buffer);
                 audioChunksRef.current.push(pcm16);
             };
 
-            // ✅ ADDED batching loop
             batchIntervalRef.current = setInterval(() => {
                 const chunks = audioChunksRef.current;
                 if (chunks.length === 0) return;
@@ -101,30 +141,25 @@ function SpeechToText({
                     0
                 );
                 const merged = new Int16Array(totalLength);
-
                 let offset = 0;
                 for (const chunk of chunks) {
                     merged.set(chunk, offset);
                     offset += chunk.length;
                 }
 
-                audioChunksRef.current = []; // clear batch
-
+                audioChunksRef.current = [];
                 sendAudioBatch(merged);
             }, 300);
-
-            setIsRecording(true);
         } catch (error) {
             console.error("Error accessing microphone:", error);
             alert("Unable to access microphone. Please check permissions.");
         }
     };
 
-    // Stop recording
     const handleStopRecording = () => {
+        isRecordingRef.current = false;
         setIsRecording(false);
 
-        // ✅ stop batching timer
         if (batchIntervalRef.current) {
             clearInterval(batchIntervalRef.current);
             batchIntervalRef.current = null;
@@ -158,8 +193,7 @@ function SpeechToText({
         return () => {
             if (batchIntervalRef.current)
                 clearInterval(batchIntervalRef.current);
-
-            if (isRecording) handleStopRecording();
+            if (isRecordingRef.current) handleStopRecording();
         };
     }, []);
 
