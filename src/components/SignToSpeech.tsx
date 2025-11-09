@@ -81,9 +81,29 @@ function SignToSpeech({}: SignToSpeechProps = {}) {
         }
     };
 
+    function useFadeIn(delay = 0) {
+        const ref = useRef<HTMLDivElement>(null);
+        const [isVisible, setIsVisible] = useState(false);
+
+        useEffect(() => {
+            const t = setTimeout(() => setIsVisible(true), delay);
+            return () => clearTimeout(t);
+        }, [delay]);
+
+        return { ref, isVisible };
+    }
+
+    const videoArea = useFadeIn(0);
+    const inputArea = useFadeIn(200);
+
     return (
         <div className="sign-to-speech-container">
-            <div className="video-area">
+            <div
+                ref={videoArea.ref as React.RefObject<HTMLDivElement>}
+                className={`video-area fade-in-element ${
+                    videoArea.isVisible ? "visible" : ""
+                }`}
+            >
                 <div className="video-wrapper">
                     <video
                         ref={videoRef}
@@ -94,9 +114,23 @@ function SignToSpeech({}: SignToSpeechProps = {}) {
                     />
                     {!isStreaming && (
                         <div className="video-placeholder">
-                            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                            <svg
+                                width="64"
+                                height="64"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="1.5"
+                            >
                                 <path d="M23 7l-7 5 7 5V7z" />
-                                <rect x="1" y="5" width="15" height="14" rx="2" ry="2" />
+                                <rect
+                                    x="1"
+                                    y="5"
+                                    width="15"
+                                    height="14"
+                                    rx="2"
+                                    ry="2"
+                                />
                             </svg>
                             <p>Camera feed will appear here</p>
                         </div>
@@ -106,25 +140,57 @@ function SignToSpeech({}: SignToSpeechProps = {}) {
 
                 {translatedText && (
                     <div className="translation-display">
-                        <div className="translation-content">{translatedText}</div>
+                        <div className="translation-content">
+                            {translatedText}
+                        </div>
                     </div>
                 )}
             </div>
 
-            <div className="input-area">
+            <div
+                ref={inputArea.ref as React.RefObject<HTMLDivElement>}
+                className={`input-area fade-in-element fade-in-delay-1 ${
+                    inputArea.isVisible ? "visible" : ""
+                }`}
+            >
                 <button
-                    className={`stream-button ${isStreaming ? "streaming" : ""}`}
+                    className={`stream-button ${
+                        isStreaming ? "streaming" : ""
+                    }`}
                     onClick={toggleStreaming}
-                    aria-label={isStreaming ? "Stop streaming" : "Start streaming"}
+                    aria-label={
+                        isStreaming ? "Stop streaming" : "Start streaming"
+                    }
                 >
                     {isStreaming ? (
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <svg
+                            width="20"
+                            height="20"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                        >
                             <rect x="6" y="6" width="12" height="12" rx="2" />
                         </svg>
                     ) : (
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <svg
+                            width="20"
+                            height="20"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                        >
                             <path d="M23 7l-7 5 7 5V7z" />
-                            <rect x="1" y="5" width="15" height="14" rx="2" ry="2" />
+                            <rect
+                                x="1"
+                                y="5"
+                                width="15"
+                                height="14"
+                                rx="2"
+                                ry="2"
+                            />
                         </svg>
                     )}
                 </button>

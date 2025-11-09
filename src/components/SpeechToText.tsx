@@ -11,6 +11,7 @@ interface SpeechToTextProps {
 }
 
 function SpeechToText({
+    wsUrl = "ws://localhost:8000/ws",
 }: SpeechToTextProps = {}) {
     const [isRecording, setIsRecording] = useState(false);
     const [transcribedText, setTranscribedText] = useState("");
@@ -89,7 +90,11 @@ function SpeechToText({
         }
 
         // TODO: Send audioChunksRef.current to backend
-        console.log("Audio recorded, ready to send to backend:", audioChunksRef.current.length, "chunks");
+        console.log(
+            "Audio recorded, ready to send to backend:",
+            audioChunksRef.current.length,
+            "chunks"
+        );
     };
 
     const toggleRecording = () => {
@@ -109,18 +114,41 @@ function SpeechToText({
         };
     }, []);
 
+    // Fade in hook, same as SignToSpeech
+    function useFadeIn(delay = 0) {
+        const ref = useRef<HTMLDivElement>(null);
+        const [isVisible, setIsVisible] = useState(false);
+
+        useEffect(() => {
+            const t = setTimeout(() => setIsVisible(true), delay);
+            return () => clearTimeout(t);
+        }, [delay]);
+
+        return { ref, isVisible };
+    }
+
+    const conversationArea = useFadeIn(0);
+    const inputArea = useFadeIn(200);
+
     return (
         <div className="speech-to-text-container">
-            <div className="conversation-area">
+            <div
+                ref={conversationArea.ref}
+                className={`conversation-area fade-in-element ${
+                    conversationArea.isVisible ? "visible" : ""
+                }`}
+            >
                 {transcribedText && (
                     <div className="message">
                         <div className="message-content">{transcribedText}</div>
                     </div>
                 )}
-                
+
                 {!transcribedText && !isRecording && (
                     <div className="empty-state">
-                        <p className="empty-text">Click the button below to start recording</p>
+                        <p className="empty-text">
+                            Click the button below to start recording
+                        </p>
                     </div>
                 )}
 
@@ -132,18 +160,41 @@ function SpeechToText({
                 )}
             </div>
 
-            <div className="input-area">
+            <div
+                ref={inputArea.ref}
+                className={`input-area fade-in-element fade-in-delay-1 ${
+                    inputArea.isVisible ? "visible" : ""
+                }`}
+            >
                 <button
-                    className={`record-button ${isRecording ? "recording" : ""}`}
+                    className={`record-button ${
+                        isRecording ? "recording" : ""
+                    }`}
                     onClick={toggleRecording}
-                    aria-label={isRecording ? "Stop recording" : "Start recording"}
+                    aria-label={
+                        isRecording ? "Stop recording" : "Start recording"
+                    }
                 >
                     {isRecording ? (
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <svg
+                            width="20"
+                            height="20"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                        >
                             <rect x="6" y="6" width="12" height="12" rx="2" />
                         </svg>
                     ) : (
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <svg
+                            width="20"
+                            height="20"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                        >
                             <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
                             <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
                             <line x1="12" y1="19" x2="12" y2="23" />

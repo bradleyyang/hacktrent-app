@@ -4,6 +4,8 @@ import SignToSpeech from "./components/SignToSpeech";
 import "./App.css";
 import sayless from "./assets/sayless.png";
 
+import { useScrollAnimation } from "./hooks/useScrollAnimation";
+
 type Mode = "speech-to-text" | "sign-to-speech";
 
 function App() {
@@ -11,6 +13,11 @@ function App() {
     const navTabsRef = useRef<HTMLDivElement>(null);
     const button1Ref = useRef<HTMLButtonElement>(null);
     const button2Ref = useRef<HTMLButtonElement>(null);
+
+    const heroTitle = useScrollAnimation();
+    const heroSubtitle = useScrollAnimation();
+    const heroOrb = useScrollAnimation();
+    const modeComponent = useScrollAnimation();
 
     return (
         <div className="app">
@@ -54,26 +61,52 @@ function App() {
                 <section className="hero-section">
                     <div className="hero-content">
                         <div className="hero-text">
-                            <h2 className="hero-title">
+                            <h2
+                                ref={
+                                    heroTitle.ref as React.RefObject<HTMLHeadingElement>
+                                }
+                                className={`hero-title fade-in-element ${
+                                    heroTitle.isVisible ? "visible" : ""
+                                }`}
+                            >
                                 Breaking Communication Barriers
                             </h2>
-                            <p className="hero-subtitle">
+                            <p
+                                ref={
+                                    heroSubtitle.ref as React.RefObject<HTMLParagraphElement>
+                                }
+                                className={`hero-subtitle fade-in-element fade-in-delay-1 ${
+                                    heroSubtitle.isVisible ? "visible" : ""
+                                }`}
+                            >
                                 Real-time AI-powered translation between speech
                                 and sign language. Built for accessibility,
                                 designed for everyone.
                             </p>
                         </div>
-                        <div className="hero-visual">
+                        <div
+                            ref={heroOrb.ref as React.RefObject<HTMLDivElement>}
+                            className={`hero-visual fade-in-element fade-in-delay-2 ${
+                                heroOrb.isVisible ? "visible" : ""
+                            }`}
+                        >
                             <div className="gradient-orb"></div>
                         </div>
                     </div>
                 </section>
 
-                {mode === "speech-to-text" ? (
-                    <SpeechToText />
-                ) : (
-                    <SignToSpeech />
-                )}
+                <div
+                    ref={modeComponent.ref as React.RefObject<HTMLDivElement>}
+                    className={`fade-in-element ${
+                        modeComponent.isVisible ? "visible" : ""
+                    }`}
+                >
+                    {mode === "speech-to-text" ? (
+                        <SpeechToText />
+                    ) : (
+                        <SignToSpeech />
+                    )}
+                </div>
             </main>
 
             <footer className="app-footer">
