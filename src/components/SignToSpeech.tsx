@@ -51,7 +51,7 @@ function SignToSpeech({}: SignToSpeechProps = {}) {
 
         try {
             const response = await fetch(
-                "https://asl-to-text.onrender.com/predict",
+                `${import.meta.env.VITE_API_URL}/predict`,
                 {
                     method: "POST",
                     body: formData,
