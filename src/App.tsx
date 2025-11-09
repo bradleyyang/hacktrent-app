@@ -4,58 +4,13 @@ import SignToSpeech from "./components/SignToSpeech";
 import "./App.css";
 import sayless from "./assets/sayless.png";
 
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faMicrophone, faHandPaper } from '@fortawesome/free-solid-svg-icons';
-
 type Mode = "speech-to-text" | "sign-to-speech";
 
 function App() {
     const [mode, setMode] = useState<Mode>("speech-to-text");
     const navTabsRef = useRef<HTMLDivElement>(null);
-    const sliderRef = useRef<HTMLDivElement>(null);
     const button1Ref = useRef<HTMLButtonElement>(null);
     const button2Ref = useRef<HTMLButtonElement>(null);
-
-    useEffect(() => {
-        const updateSliderPosition = () => {
-            if (
-                !sliderRef.current ||
-                !button1Ref.current ||
-                !button2Ref.current
-            )
-                return;
-
-            if (!navTabsRef.current) return;
-
-            const activeButton =
-                mode === "speech-to-text"
-                    ? button1Ref.current
-                    : button2Ref.current;
-            const navTabs = navTabsRef.current;
-
-            const navRect = navTabs.getBoundingClientRect();
-            const buttonRect = activeButton.getBoundingClientRect();
-
-            const left = buttonRect.left - navRect.left;
-            const width = buttonRect.width;
-
-            sliderRef.current.style.transform = `translateX(${left}px)`;
-            sliderRef.current.style.width = `${width}px`;
-        };
-
-        // Small delay to ensure DOM is fully rendered
-        const timeoutId = setTimeout(() => {
-            updateSliderPosition();
-        }, 0);
-
-        // Update on window resize
-        window.addEventListener("resize", updateSliderPosition);
-
-        return () => {
-            clearTimeout(timeoutId);
-            window.removeEventListener("resize", updateSliderPosition);
-        };
-    }, [mode]);
 
     return (
         <div className="app">
@@ -72,7 +27,6 @@ function App() {
                         Sayless
                     </h1>
                     <nav className="nav-tabs" ref={navTabsRef}>
-                        <div className="nav-slider" ref={sliderRef}></div>
                         <button
                             ref={button1Ref}
                             className={`mode-button ${
@@ -80,9 +34,9 @@ function App() {
                             }`}
                             onClick={() => setMode("speech-to-text")}
                         >
-                            <FontAwesomeIcon icon={faMicrophone} />
                             Speech to Text
                         </button>
+                        <span className="mode-separator">/</span>
                         <button
                             ref={button2Ref}
                             className={`mode-button ${
@@ -90,7 +44,6 @@ function App() {
                             }`}
                             onClick={() => setMode("sign-to-speech")}
                         >
-                            <FontAwesomeIcon icon={faHandPaper} />
                             Sign to Speech
                         </button>
                     </nav>

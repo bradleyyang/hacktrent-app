@@ -46,61 +46,58 @@
 }
 
 .title-icon-img {
-    width: 1.5em;   /* or any size you want */
+    width: 1.5em;
     height: 1.5em;
-    vertical-align: middle; /* aligns with text */
+    vertical-align: middle;
 }
 
 .nav-tabs {
     display: flex;
-    gap: 0.5rem;
-    background: var(--background-secondary);
-    border-radius: var(--radius);
-    border: 1px solid var(--border);
-    position: relative;
-}
-
-.nav-slider {
-    position: absolute;
-    top: 0;
-    left: 0;
-    height: 100%; 
-    background: var(--primary);
-    border-radius: calc(var(--radius) - 2px);
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-        width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: var(--shadow-sm);
-    z-index: 0;
+    gap: 1rem;
+    align-items: center;
 }
 
 .mode-button {
-    padding: 0.5rem 1rem;
-    font-size: 0.875rem;
+    padding: 0.5rem 0;
+    font-size: 0.95rem;
     font-weight: 500;
     border: none;
     background: transparent;
-    color: var(--text-secondary);
-    border-radius: calc(var(--radius) - 2px);
+    color: var(--text-muted);
     cursor: pointer;
-    transition: color 0.2s ease;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    white-space: nowrap;
+    transition: all 0.3s ease;
     position: relative;
-    z-index: 1;
 }
 
 .mode-button:hover {
-    color: var(--text-primary);
+    color: rgba(255, 255, 255, 0.9);
+    text-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
 }
 
 .mode-button.active {
-    color: var(--text-inverse);
+    color: white;
+    text-shadow: 0 0 12px rgba(255, 255, 255, 0.8),
+                 0 0 20px rgba(255, 255, 255, 0.4);
 }
 
-.button-icon {
-    font-size: 1rem;
+@media (prefers-color-scheme: dark) {
+    .mode-button {
+        color: rgba(156, 163, 175, 1);
+    }
+    
+    .mode-button:hover {
+        color: rgba(255, 255, 255, 0.9);
+    }
+    
+    .mode-button.active {
+        color: white;
+    }
+}
+
+.mode-separator {
+    color: var(--text-muted);
+    font-weight: 300;
+    user-select: none;
 }
 
 .app-main {
@@ -240,12 +237,11 @@
 
     .nav-tabs {
         width: 100%;
-        justify-content: stretch;
+        justify-content: center;
     }
 
     .mode-button {
-        flex: 1;
-        justify-content: center;
+        font-size: 0.875rem;
     }
 
     .app-main {
