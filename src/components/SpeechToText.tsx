@@ -29,12 +29,17 @@ function SpeechToText({
     // ADDED
     async function sendAudioBatch(pcmData: Int16Array) {
         try {
-            const res = await fetch("http://localhost:8000/stt-chunk", {
+            // Convert Int16Array to Base64
+            const wavBase64 = btoa(
+                String.fromCharCode(...new Uint8Array(pcmData.buffer))
+            );
+
+            const res = await fetch("http://localhost:8000/transcribe-audio", {
                 method: "POST",
                 headers: {
-                    "Content-Type": "application/octet-stream",
+                    "Content-Type": "application/json",
                 },
-                body: pcmData.slice().buffer,
+                body: JSON.stringify({ audio_data: wavBase64 }),
             });
 
             if (!res.ok) {
@@ -42,9 +47,9 @@ function SpeechToText({
                 return;
             }
 
-            const { text } = await res.json();
-            if (text) {
-                setTranscribedText((prev) => prev + " " + text);
+            const { transcription } = await res.json();
+            if (transcription) {
+                setTranscribedText((prev) => prev + " " + transcription);
             }
         } catch (err) {
             console.error("Error sending audio batch:", err);
