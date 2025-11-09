@@ -53,28 +53,53 @@ function SpeechToText({}: SpeechToTextProps = {}) {
         null
     );
 
-    // Safe Base64 conversion for large arrays
-    function int16ToBase64(int16Array: Int16Array) {
-        const chunkSize = 0x8000; // 32k
-        let result = "";
-        for (let i = 0; i < int16Array.length; i += chunkSize) {
-            const chunk = int16Array.subarray(i, i + chunkSize);
-            result += String.fromCharCode(...chunk);
+    function pcm16ToWav(pcmData: any, sampleRate = 16000) {
+        const buffer = new ArrayBuffer(44 + pcmData.length * 2);
+        const view = new DataView(buffer);
+
+        // RIFF header
+        view.setUint32(0, 0x52494646, false);
+        view.setUint32(4, 36 + pcmData.length * 2, true);
+        view.setUint32(8, 0x57415645, false);
+
+        // fmt chunk
+        view.setUint32(12, 0x666d7420, false);
+        view.setUint32(16, 16, true);
+        view.setUint16(20, 1, true);
+        view.setUint16(22, 1, true);
+        view.setUint32(24, sampleRate, true);
+        view.setUint32(28, sampleRate * 2, true);
+        view.setUint16(32, 2, true);
+        view.setUint16(34, 16, true);
+
+        // data chunk
+        view.setUint32(36, 0x64617461, false);
+        view.setUint32(40, pcmData.length * 2, true);
+
+        let offset = 44;
+        for (let i = 0; i < pcmData.length; i++, offset += 2) {
+            view.setInt16(offset, pcmData[i], true);
         }
-        return btoa(result);
+
+        return new Blob([new Uint8Array(buffer)], { type: "audio/wav" });
     }
 
-    async function sendAudioBatch(pcmData: Int16Array) {
+    async function sendAudioBatch(pcmData: any) {
         try {
-            const wavBase64 = int16ToBase64(pcmData);
+            const wavBlob = pcm16ToWav(pcmData);
 
-            const res = await fetch("http://localhost:8000/transcribe-audio", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({ audio_data: wavBase64 }),
-            });
+            const formData = new FormData();
+            formData.append("file", wavBlob, "audio.wav");
+
+            console.log("VITE_APP_URL =", import.meta.env.VITE_APP_URL);
+
+            const res = await fetch(
+                `${import.meta.env.VITE_API_URL}/transcribe`,
+                {
+                    method: "POST",
+                    body: formData,
+                }
+            );
 
             if (!res.ok) {
                 console.error("Backend transcription error");
@@ -136,6 +161,8 @@ function SpeechToText({}: SpeechToTextProps = {}) {
                     (sum, arr) => sum + arr.length,
                     0
                 );
+                if (totalLength < 16000) return; // at least 1 second of audio at 16kHz
+
                 const merged = new Int16Array(totalLength);
                 let offset = 0;
                 for (const chunk of chunks) {
@@ -145,7 +172,7 @@ function SpeechToText({}: SpeechToTextProps = {}) {
 
                 audioChunksRef.current = [];
                 sendAudioBatch(merged);
-            }, 300);
+            }, 1000); // send every 1 second
         } catch (error) {
             console.error("Error accessing microphone:", error);
             alert("Unable to access microphone. Please check permissions.");
