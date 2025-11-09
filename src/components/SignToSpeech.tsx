@@ -1,11 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import "./SignToSpeech.css";
 
-interface SignToSpeechProps {
-    wsUrl?: string;
-    initialFps?: number;
-    sendMotionThreshold?: number;
-}
+interface SignToSpeechProps {}
 
 function SignToSpeech({}: SignToSpeechProps = {}) {
     const videoRef = useRef<HTMLVideoElement>(null);
@@ -15,24 +11,73 @@ function SignToSpeech({}: SignToSpeechProps = {}) {
     const [isStreaming, setIsStreaming] = useState(false);
     const [translatedText, setTranslatedText] = useState("");
 
+    // Timer for sending frames
+    const frameIntervalRef = useRef<number | null>(null);
+
     // Cleanup on unmount
     useEffect(() => {
         return () => {
-            if (isStreaming) {
-                stopCamera();
-            }
+            stopCamera();
         };
     }, []);
 
-    // Start camera
+    /** Capture a single frame from the video as a Blob */
+    async function captureFrame(): Promise<Blob | null> {
+        if (!canvasRef.current || !videoRef.current) return null;
+
+        const canvas = canvasRef.current;
+        const video = videoRef.current;
+
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return null;
+
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+        return new Promise((resolve) => {
+            canvas.toBlob((blob) => resolve(blob), "image/jpeg");
+        });
+    }
+
+    /** Send a frame to the /predict endpoint */
+    async function sendFrameToBackend() {
+        const frameBlob = await captureFrame();
+        if (!frameBlob) return;
+
+        const formData = new FormData();
+        formData.append("file", frameBlob, "frame.jpg");
+
+        try {
+            const response = await fetch("http://localhost:8000/predict", {
+                method: "POST",
+                body: formData,
+            });
+
+            if (!response.ok) {
+                console.error("Prediction request failed", response.statusText);
+                return;
+            }
+
+            const data = await response.json();
+            setTranslatedText(data.prediction);
+
+            // Play audio if returned
+            if (data.audio) {
+                const audio = new Audio(`data:audio/wav;base64,${data.audio}`);
+                audio.play();
+            }
+        } catch (err) {
+            console.error("Error sending frame:", err);
+        }
+    }
+
+    /** Start the camera */
     async function startCamera() {
         try {
             const stream = await navigator.mediaDevices.getUserMedia({
-                video: {
-                    width: { ideal: 1280 },
-                    height: { ideal: 720 },
-                    facingMode: "user",
-                },
+                video: { width: 1280, height: 720, facingMode: "user" },
                 audio: false,
             });
 
@@ -49,36 +94,45 @@ function SignToSpeech({}: SignToSpeechProps = {}) {
         }
     }
 
+    /** Stop the camera */
     function stopCamera() {
         const stream = videoRef.current?.srcObject as MediaStream | null;
         if (stream) {
             stream.getTracks().forEach((track) => track.stop());
-            if (videoRef.current) {
-                videoRef.current.srcObject = null;
-            }
+            if (videoRef.current) videoRef.current.srcObject = null;
             streamRef.current = null;
+        }
+
+        // Stop sending frames
+        if (frameIntervalRef.current !== null) {
+            clearInterval(frameIntervalRef.current);
+            frameIntervalRef.current = null;
         }
     }
 
+    /** Handle start streaming */
     async function handleStart() {
         const ok = await startCamera();
         if (!ok) return;
+
         setIsStreaming(true);
-        // TODO: Connect to backend and start sending frames
-        console.log("Camera started, ready to send frames to backend");
+
+        // Send frames every 1 second
+        frameIntervalRef.current = window.setInterval(() => {
+            sendFrameToBackend();
+        }, 1000);
     }
 
+    /** Handle stop streaming */
     function handleStop() {
         setIsStreaming(false);
         stopCamera();
     }
 
+    /** Toggle streaming */
     const toggleStreaming = () => {
-        if (isStreaming) {
-            handleStop();
-        } else {
-            handleStart();
-        }
+        if (isStreaming) handleStop();
+        else handleStart();
     };
 
     function useFadeIn(delay = 0) {
