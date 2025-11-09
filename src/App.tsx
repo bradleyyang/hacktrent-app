@@ -4,6 +4,9 @@ import SignToSpeech from "./components/SignToSpeech";
 import "./App.css";
 import sayless from "./assets/sayless.png";
 
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faMicrophone, faHandPaper } from '@fortawesome/free-solid-svg-icons';
+
 type Mode = "speech-to-text" | "sign-to-speech";
 
 function App() {
@@ -77,7 +80,7 @@ function App() {
                             }`}
                             onClick={() => setMode("speech-to-text")}
                         >
-                            <span className="button-icon">🎤</span>
+                            <FontAwesomeIcon icon={faMicrophone} />
                             Speech to Text
                         </button>
                         <button
@@ -87,7 +90,7 @@ function App() {
                             }`}
                             onClick={() => setMode("sign-to-speech")}
                         >
-                            <span className="button-icon">📹</span>
+                            <FontAwesomeIcon icon={faHandPaper} />
                             Sign to Speech
                         </button>
                     </nav>
