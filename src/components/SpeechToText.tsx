@@ -6,9 +6,7 @@ import {
 } from "../utils/audioProcessing";
 import "./SpeechToText.css";
 
-interface SpeechToTextProps {
-    wsUrl?: string;
-}
+interface SpeechToTextProps {}
 
 function resampleTo16kHz(
     buffer: Float32Array,
@@ -42,9 +40,7 @@ function resampleTo16kHz(
     return resampled;
 }
 
-function SpeechToText({
-    wsUrl = "ws://localhost:8000/ws",
-}: SpeechToTextProps = {}) {
+function SpeechToText({}: SpeechToTextProps = {}) {
     const [isRecording, setIsRecording] = useState(false);
     const [transcribedText, setTranscribedText] = useState("");
 
