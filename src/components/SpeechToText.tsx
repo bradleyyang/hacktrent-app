@@ -21,21 +21,48 @@ function SpeechToText({
     const streamRef = useRef<MediaStream | null>(null);
     const audioChunksRef = useRef<Int16Array[]>([]);
 
+    // const batchIntervalRef = useRef<NodeJS.Timer | null>(null); // ADDED
+    const batchIntervalRef = useRef<ReturnType<typeof setInterval> | null>(
+        null
+    );
+
+    // ADDED
+    async function sendAudioBatch(pcmData: Int16Array) {
+        try {
+            const res = await fetch("http://localhost:8000/stt-chunk", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/octet-stream",
+                },
+                body: pcmData.slice().buffer,
+            });
+
+            if (!res.ok) {
+                console.error("Backend transcription error");
+                return;
+            }
+
+            const { text } = await res.json();
+            if (text) {
+                setTranscribedText((prev) => prev + " " + text);
+            }
+        } catch (err) {
+            console.error("Error sending audio batch:", err);
+        }
+    }
+
     // Start recording
     const handleStartRecording = async () => {
         try {
-            // Get microphone access
             const stream = await navigator.mediaDevices.getUserMedia(
                 getAudioConstraints()
             );
             streamRef.current = stream;
 
-            // Create AudioContext
             audioContextRef.current = createAudioContext();
             const source =
                 audioContextRef.current.createMediaStreamSource(stream);
 
-            // Create ScriptProcessorNode for audio processing
             const bufferSize = 4096;
             processorRef.current =
                 audioContextRef.current.createScriptProcessor(bufferSize, 1, 1);
@@ -43,22 +70,43 @@ function SpeechToText({
             source.connect(processorRef.current);
             processorRef.current.connect(audioContextRef.current.destination);
 
-            // Clear previous chunks
             audioChunksRef.current = [];
 
-            // Process audio chunks
             processorRef.current.onaudioprocess = (e) => {
-                if (!isRecording) {
-                    return;
-                }
+                if (!isRecording) return;
 
                 const inputData = e.inputBuffer.getChannelData(0);
                 const buffer = new Float32Array(inputData);
 
-                // Convert to 16-bit PCM and store
-                const pcm16 = floatTo16BitPCM(buffer);
-                // audioChunksRef.current.push(pcm16);
+                // const pcm16 = floatTo16BitPCM(buffer);
+                // audioChunksRef.current.push(pcm16); // ✅ UNCOMMENTED
+
+                const pcm16Buffer = floatTo16BitPCM(buffer);
+                const pcm16 = new Int16Array(pcm16Buffer); // ✅ wrap
+                audioChunksRef.current.push(pcm16);
             };
+
+            // ✅ ADDED batching loop
+            batchIntervalRef.current = setInterval(() => {
+                const chunks = audioChunksRef.current;
+                if (chunks.length === 0) return;
+
+                const totalLength = chunks.reduce(
+                    (sum, arr) => sum + arr.length,
+                    0
+                );
+                const merged = new Int16Array(totalLength);
+
+                let offset = 0;
+                for (const chunk of chunks) {
+                    merged.set(chunk, offset);
+                    offset += chunk.length;
+                }
+
+                audioChunksRef.current = []; // clear batch
+
+                sendAudioBatch(merged);
+            }, 300);
 
             setIsRecording(true);
         } catch (error) {
@@ -71,30 +119,26 @@ function SpeechToText({
     const handleStopRecording = () => {
         setIsRecording(false);
 
-        // Disconnect audio processing
+        // ✅ stop batching timer
+        if (batchIntervalRef.current) {
+            clearInterval(batchIntervalRef.current);
+            batchIntervalRef.current = null;
+        }
+
         if (processorRef.current) {
             processorRef.current.disconnect();
             processorRef.current = null;
         }
 
-        // Close audio context
         if (audioContextRef.current) {
             audioContextRef.current.close().catch(console.error);
             audioContextRef.current = null;
         }
 
-        // Stop media stream
         if (streamRef.current) {
             streamRef.current.getTracks().forEach((track) => track.stop());
             streamRef.current = null;
         }
-
-        // TODO: Send audioChunksRef.current to backend
-        console.log(
-            "Audio recorded, ready to send to backend:",
-            audioChunksRef.current.length,
-            "chunks"
-        );
     };
 
     const toggleRecording = () => {
@@ -105,16 +149,16 @@ function SpeechToText({
         }
     };
 
-    // Cleanup on unmount
     useEffect(() => {
         return () => {
-            if (isRecording) {
-                handleStopRecording();
-            }
+            if (batchIntervalRef.current)
+                clearInterval(batchIntervalRef.current);
+
+            if (isRecording) handleStopRecording();
         };
     }, []);
 
-    // Fade in hook, same as SignToSpeech
+    // Fade in hook
     function useFadeIn(delay = 0) {
         const ref = useRef<HTMLDivElement>(null);
         const [isVisible, setIsVisible] = useState(false);
