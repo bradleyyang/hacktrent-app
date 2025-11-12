@@ -6,12 +6,11 @@ A modern web application that translates between spoken words and sign language 
 
 ## Features
 
-### Speech → Sign Language
+### Speech to Text Language
 - Record audio using your microphone
 - View transcribed text
-- See sign language visual representation
 
-### Sign Language → Speech
+### Sign Language to Speech
 - Use camera to capture sign language
 - View detected sign language
 - See translated text
@@ -35,7 +34,7 @@ npm install
 npm run dev
 ```
 
-3. Open your browser and navigate to the URL shown in the terminal (typically `http://localhost:5173`)
+3. Open your browser and navigate to the URL shown in the terminal
 
 ### Building for Production
 
@@ -50,8 +49,8 @@ The built files will be in the `dist` directory.
 ```
 src/
   ├── components/
-  │   ├── SpeechToSign.tsx    # Speech to sign language component
-  │   ├── SpeechToSign.css
+  │   ├── SpeechToText.tsx    # Speech to text language component
+  │   ├── SpeechToText.css
   │   ├── SignToSpeech.tsx    # Sign language to speech component
   │   └── SignToSpeech.css
   ├── App.tsx                  # Main app component
@@ -60,33 +59,10 @@ src/
   └── index.css                # Global styles
 ```
 
-## Backend Integration Points
-
-The UI is ready for backend integration. Look for `TODO` comments in the code:
-
-1. **SpeechToSign.tsx**: 
-   - Line ~40: Send audio blob to backend for transcription and translation
-   
-2. **SignToSpeech.tsx**:
-   - Line ~40: Send captured frame to backend for sign language recognition
-   - Line ~60: Use backend API for text-to-speech (currently uses browser TTS)
-
 ## Browser Permissions
 
 The app requires:
-- **Microphone access** for speech-to-sign translation
+- **Microphone access** for speech-to-text translation
 - **Camera access** for sign-to-speech translation
 
 Make sure to grant these permissions when prompted by your browser.
-
-## Technologies Used
-
-- React 18
-- TypeScript
-- Vite
-- Modern CSS with CSS Variables
-
-## License
-
-MIT
-

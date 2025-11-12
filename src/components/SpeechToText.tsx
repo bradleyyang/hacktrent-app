@@ -91,8 +91,6 @@ function SpeechToText({}: SpeechToTextProps = {}) {
             const formData = new FormData();
             formData.append("file", wavBlob, "audio.wav");
 
-            console.log("VITE_APP_URL =", import.meta.env.VITE_APP_URL);
-
             const res = await fetch(
                 `${import.meta.env.VITE_API_URL}/transcribe`,
                 {

@@ -110,7 +110,7 @@ function App() {
             </main>
 
             <footer className="app-footer">
-                <p>HackTrent 2025</p>
+                <p>Sayless 2025</p>
             </footer>
         </div>
     );
